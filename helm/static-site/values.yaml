@@ -1,0 +1,49 @@
+image:
+  repository: localhost:5000/static-site
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+environment: "dev"
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "traefik"
+  entryPoints:
+    http: web
+    https: websecure
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+
+  host: "static-site.local"
+  tls:
+    enabled: true
+    secretName: "static-site-tls"
+
+env:
+  ENVIRONMENT: "dev"
+
+secrets:
+  SECRET: "default-secret"
+
+probes:
+  liveness:
+    path: /health
+    port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  readiness:
+    path: /health
+    port: 8080
+    initialDelaySeconds: 3
+    periodSeconds: 5

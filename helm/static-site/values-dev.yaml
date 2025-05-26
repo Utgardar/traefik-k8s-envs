@@ -1,0 +1,13 @@
+environment: "dev"
+replicaCount: 1
+
+ingress:
+  host: "dev.static-site.local"
+  tls:
+    secretName: "static-site-tls-dev"
+
+env:
+  ENVIRONMENT: "dev"
+
+secrets:
+  SECRET: "dev-environment-secret"

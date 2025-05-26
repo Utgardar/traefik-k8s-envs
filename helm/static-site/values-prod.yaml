@@ -1,0 +1,13 @@
+environment: "prod"
+replicaCount: 2
+
+ingress:
+  host: "static-site.local"
+  tls:
+    secretName: "static-site-tls-prod"
+
+env:
+  ENVIRONMENT: "prod"
+
+secrets:
+  SECRET: "production-environment-secret"

@@ -1,0 +1,11 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }} and is running in the {{ .Values.environment }} environment.
+
+To access your application:
+URL: https://{{ .Values.ingress.host }}
+
+NOTE: You might need to add this host to your /etc/hosts file and accept the self-signed certificate warnings in your browser.
+
+To verify the deployment status, run:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}

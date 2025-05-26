@@ -1,0 +1,12 @@
+apiVersion: v2
+name: static-site
+description: A Helm chart for a static website with dev and prod environments
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - static-site
+  - traefik
+maintainers:
+  - name: Xayn
+    email: info@example.com

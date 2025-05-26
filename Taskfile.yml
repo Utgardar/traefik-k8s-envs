@@ -1,0 +1,99 @@
+# https://taskfile.dev
+
+version: "3"
+
+env:
+  PATH: /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.asdf/shims
+
+tasks:
+  default:
+    cmds:
+      - task: create-namespaces
+      - task: start-registry
+      - task: docker-push
+      - task: deploy-apps
+
+  create-namespaces:
+    cmds:
+      - task: create-namespace-ingress
+      - task: create-namespace-dev
+      - task: create-namespace-prod
+  create-namespace-ingress:
+    cmds:
+      - kubectl create namespace traefik || echo "namespace already exists"
+  create-namespace-dev:
+    cmds:
+      - kubectl create namespace app-dev || echo "namespace already exists"
+  create-namespace-prod:
+    cmds:
+      - kubectl create namespace app-prod || echo "namespace already exists"
+
+  start-registry:
+    cmds:
+      - docker ps -a | grep -q kind-registry || ./start-local.sh
+
+  docker-push:
+    cmds:
+      - task: docker-push-app
+  docker-push-app:
+    dir: ${PWD}/static_site
+    cmds:
+      - docker build -t localhost:5000/static-site:latest --push .
+
+  deploy-apps:
+    cmds:
+      - task: generate-tls
+      - task: deploy-traefik
+      - task: deploy-app
+  generate-tls:
+    cmds:
+      - ./generate-certs.sh
+  deploy-traefik:
+    dir: ${PWD}/helm/traefik
+    cmds:
+      - helm repo add traefik https://traefik.github.io/charts
+      - helm repo update
+      - helm upgrade --install traefik traefik/traefik --namespace ingress --create-namespace --wait --values values.yaml
+  deploy-app-dev:
+    dir: ${PWD}/helm/static-site
+    cmds:
+      - helm upgrade --install static-site-dev . --namespace app-dev --create-namespace --wait --values values-dev.yaml
+  deploy-app-prod:
+    dir: ${PWD}/helm/static-site
+    cmds:
+      - helm upgrade --install static-site-prod . --namespace app-prod --create-namespace --wait --values values-prod.yaml
+  deploy-app:
+    cmds:
+      - task: deploy-app-dev
+      - task: deploy-app-prod
+
+  delete-apps:
+    cmds:
+      - task: delete-app
+      - task: delete-traefik
+      - task: delete-namespaces
+      - task: cleanup
+  delete-traefik:
+    cmds:
+      - helm uninstall traefik --namespace ingress || echo "Traefik not installed"
+  delete-app-dev:
+    cmds:
+      - helm uninstall static-site-dev --namespace app-dev || echo "Static site dev not installed"
+  delete-app-prod:
+    cmds:
+      - helm uninstall static-site-prod --namespace app-prod || echo "Static site prod not installed"
+  delete-app:
+    cmds:
+      - task: delete-app-dev
+      - task: delete-app-prod
+  delete-namespaces:
+    cmds:
+      - kubectl delete namespace app-dev || echo "Namespace app-dev not found"
+      - kubectl delete namespace app-prod || echo "Namespace app-prod not found"
+      - kubectl delete namespace ingress || echo "Namespace ingress not found"
+  cleanup:
+    cmds:
+      - docker ps -a | grep -q kind-registry && docker stop kind-registry
+      - docker ps -a | grep -q kind-registry && docker rm kind-registry
+      - docker network prune --force
+      - docker volume prune --force
